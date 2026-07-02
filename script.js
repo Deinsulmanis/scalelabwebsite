@@ -116,20 +116,35 @@ setInterval(updateLiveTime, 1000);
 // CONTACT FORM
 const form    = document.getElementById('contactForm');
 const success = document.getElementById('formSuccess');
+const error   = document.getElementById('formError');
 form.addEventListener('submit', (e) => {
   e.preventDefault();
   const btn = form.querySelector('button[type="submit"]');
   btn.textContent = 'Sending...';
   btn.disabled = true;
   btn.style.opacity = '0.7';
-  setTimeout(() => {
-    form.querySelectorAll('input, textarea').forEach(el => el.value = '');
-    btn.textContent = 'Send Message →';
-    btn.disabled = false;
-    btn.style.opacity = '1';
-    success.classList.add('visible');
-    setTimeout(() => success.classList.remove('visible'), 6000);
-  }, 1200);
+  error.classList.remove('visible');
+
+  fetch(form.action, {
+    method: 'POST',
+    body: new FormData(form),
+    headers: { 'Accept': 'application/json' }
+  })
+    .then((response) => {
+      if (!response.ok) throw new Error('Form submission failed');
+      form.reset();
+      success.classList.add('visible');
+      setTimeout(() => success.classList.remove('visible'), 6000);
+    })
+    .catch(() => {
+      error.classList.add('visible');
+      setTimeout(() => error.classList.remove('visible'), 8000);
+    })
+    .finally(() => {
+      btn.textContent = 'Send Message →';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    });
 });
 
 // SMOOTH SCROLL — account for nav height

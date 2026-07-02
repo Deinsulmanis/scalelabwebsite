@@ -756,6 +756,13 @@ ul { list-style: none; }
 }
 .form-success svg { width: 20px; height: 20px; }
 .form-success.visible { display: flex; }
+.form-error {
+  display: none; align-items: center; gap: 12px; padding: 16px;
+  background: rgba(255,90,90,0.06); border: 1px solid rgba(255,90,90,0.25);
+  border-radius: var(--sl-r-input); font-size: 0.875rem; color: #FF8A8A; margin-top: 16px;
+}
+.form-error svg { width: 20px; height: 20px; }
+.form-error.visible { display: flex; }
 
 /* ============================
    FOOTER
