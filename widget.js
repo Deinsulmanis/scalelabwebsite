@@ -348,6 +348,27 @@
       <circle cx="4"  cy="17" r="2.5" fill="#00D4FF"/>
     </svg>`;
 
+  // Dark variant for the launcher bubble (solid cyan background needs dark contrast)
+  const HEX_LOGO_DARK = `
+    <svg class="sla-icon-chat" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="28,4 52,17 52,39 28,52 4,39 4,17" stroke="#020D18" stroke-width="2" fill="none"/>
+      <polygon points="28,14 44,23 44,33 28,42 12,33 12,23" stroke="#020D18" stroke-width="1.4" fill="none" opacity="0.6"/>
+      <line x1="4"  y1="17" x2="12" y2="23" stroke="#020D18" stroke-width="1.4" opacity="0.7"/>
+      <line x1="52" y1="17" x2="44" y2="23" stroke="#020D18" stroke-width="1.4" opacity="0.7"/>
+      <line x1="4"  y1="39" x2="12" y2="33" stroke="#020D18" stroke-width="1.4" opacity="0.7"/>
+      <line x1="52" y1="39" x2="44" y2="33" stroke="#020D18" stroke-width="1.4" opacity="0.7"/>
+      <line x1="28" y1="4"  x2="28" y2="14" stroke="#020D18" stroke-width="1.4" opacity="0.7"/>
+      <line x1="28" y1="52" x2="28" y2="42" stroke="#020D18" stroke-width="1.4" opacity="0.7"/>
+      <circle cx="28" cy="28" r="4.5" fill="#020D18"/>
+      <circle cx="28" cy="28" r="2"   fill="#00D4FF"/>
+      <circle cx="28" cy="4"  r="3" fill="#020D18"/>
+      <circle cx="52" cy="17" r="3" fill="#020D18"/>
+      <circle cx="52" cy="39" r="3" fill="#020D18"/>
+      <circle cx="28" cy="52" r="3" fill="#020D18"/>
+      <circle cx="4"  cy="39" r="3" fill="#020D18"/>
+      <circle cx="4"  cy="17" r="3" fill="#020D18"/>
+    </svg>`;
+
   // Chat window
   const win = document.createElement("div");
   win.id = "sla-window";
@@ -378,9 +399,7 @@
   launcher.innerHTML = `
     <div id="sla-tooltip">👋 Let's automate your business!</div>
     <button id="sla-bubble" aria-label="Open chat">
-      <svg class="sla-icon-chat" viewBox="0 0 24 24">
-        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-      </svg>
+      ${HEX_LOGO_DARK}
       <svg class="sla-icon-close" viewBox="0 0 24 24">
         <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
       </svg>
