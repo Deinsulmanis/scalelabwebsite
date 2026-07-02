@@ -640,6 +640,10 @@ ul { list-style: none; }
 .t-cursor      { color: var(--sl-fg-secondary); }
 .blink { animation: blink 1s step-end infinite; color: var(--sl-cyan); }
 @keyframes blink { 50% { opacity: 0; } }
+.terminal-caption {
+  margin-top: 16px; font-size: 0.7rem; letter-spacing: 0.06em;
+  color: var(--sl-fg-caption); text-transform: uppercase;
+}
 
 /* ============================
    RESULTS
@@ -663,6 +667,42 @@ ul { list-style: none; }
 .result-num   { font-family: var(--sl-font-display); font-size: 3rem; font-weight: 800; color: var(--sl-cyan); line-height: 1; margin-bottom: 12px; }
 .result-label { font-size: 0.9rem; color: var(--sl-fg-secondary); line-height: 1.5; margin-bottom: 16px; font-weight: 300; }
 .result-client { font-size: 0.65rem; letter-spacing: 0.1em; color: var(--sl-fg-caption); text-transform: uppercase; }
+
+/* ============================
+   OUR WORK
+   ============================ */
+.work-card {
+  display: grid; grid-template-columns: 1.3fr 1fr; gap: 48px;
+  background: linear-gradient(135deg,#0D1E35 0%,#0A2040 100%);
+  border: 1px solid var(--sl-border-hover);
+  border-radius: var(--sl-r-card); padding: 48px;
+  position: relative; overflow: hidden;
+  transition: transform 0.35s var(--sl-ease-spring), box-shadow 0.35s;
+}
+.work-card::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(0,212,255,0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+.work-card:hover { transform: translateY(-6px); box-shadow: var(--sl-shadow-card); }
+.work-tag {
+  font-size: 0.7rem; letter-spacing: 0.1em; color: var(--sl-cyan);
+  text-transform: uppercase; margin-bottom: 12px;
+}
+.work-title { font-family: var(--sl-font-display); font-size: 1.8rem; font-weight: 800; margin-bottom: 16px; }
+.work-desc  { font-size: 0.95rem; color: var(--sl-fg-secondary); line-height: 1.7; font-weight: 300; margin-bottom: 28px; max-width: 460px; }
+.work-list {
+  list-style: none; display: flex; flex-direction: column; gap: 14px;
+  justify-content: center; border-left: 1px solid var(--sl-border); padding-left: 32px;
+}
+.work-list li {
+  font-size: 0.875rem; color: var(--sl-fg-secondary); font-weight: 300;
+  position: relative; padding-left: 20px;
+}
+.work-list li::before {
+  content: ''; position: absolute; left: 0; top: 8px;
+  width: 8px; height: 1px; background: var(--sl-cyan);
+}
 
 /* ============================
    CTA STRIP
@@ -749,6 +789,8 @@ ul { list-style: none; }
   .results-grid  { grid-template-columns: repeat(2,1fr); }
   .steps { grid-template-columns: repeat(2,1fr); gap: 40px; }
   .step-connector { display: none; }
+  .work-card { grid-template-columns: 1fr; gap: 32px; padding: 36px; }
+  .work-list { border-left: none; padding-left: 0; border-top: 1px solid var(--sl-border); padding-top: 24px; }
 }
 
 @media (max-width: 768px) {
@@ -763,6 +805,7 @@ ul { list-style: none; }
 
   .services-grid, .steps { grid-template-columns: 1fr; }
   .results-grid { grid-template-columns: 1fr 1fr; }
+  .work-card { padding: 28px; }
 
   .contact-wrap { grid-template-columns: 1fr; gap: 40px; }
   .form-row { grid-template-columns: 1fr; }
