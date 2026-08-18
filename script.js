@@ -117,6 +117,12 @@ setInterval(updateLiveTime, 1000);
 const form    = document.getElementById('contactForm');
 const success = document.getElementById('formSuccess');
 const error   = document.getElementById('formError');
+
+function trackAnalyticsEvent(eventName, eventParameters = {}) {
+  if (typeof window.gtag !== 'function') return;
+  window.gtag('event', eventName, eventParameters);
+}
+
 form.addEventListener('submit', (e) => {
   e.preventDefault();
   const btn = form.querySelector('button[type="submit"]');
@@ -134,6 +140,7 @@ form.addEventListener('submit', (e) => {
       if (!response.ok) throw new Error('Form submission failed');
       form.reset();
       success.classList.add('visible');
+      trackAnalyticsEvent('generate_lead');
       setTimeout(() => success.classList.remove('visible'), 6000);
     })
     .catch(() => {
@@ -145,6 +152,15 @@ form.addEventListener('submit', (e) => {
       btn.disabled = false;
       btn.style.opacity = '1';
     });
+});
+
+// Track strategy-call intent without collecting link text or form data.
+document.querySelectorAll('[data-analytics-event="strategy_call_click"]').forEach((link) => {
+  link.addEventListener('click', () => {
+    trackAnalyticsEvent('strategy_call_click', {
+      cta_location: link.dataset.analyticsLocation
+    });
+  });
 });
 
 // SMOOTH SCROLL — account for nav height
