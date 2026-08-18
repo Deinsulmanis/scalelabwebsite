@@ -3,6 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-MGQJVCVWFZ"></script>
+  <script>
+    const GA4_MEASUREMENT_ID = 'G-MGQJVCVWFZ';
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ window.dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', GA4_MEASUREMENT_ID);
+  </script>
+
   <title>Custom Software, AI Receptionists &amp; Lead Systems | ScaleLab AI</title>
   <meta name="description" content="ScaleLab AI builds custom CRM software, AI receptionists, automated lead systems, and conversion-focused websites for service businesses across Canada." />
   <meta name="geo.region"    content="CA-BC" />
@@ -238,7 +249,7 @@
       </p>
 
       <div class="hero-cta-row">
-        <a href="#contact" class="btn btn-primary">Book a Free Strategy Call</a>
+        <a href="#contact" class="btn btn-primary" data-analytics-event="strategy_call_click" data-analytics-location="hero">Book a Free Strategy Call</a>
         <a href="#services" class="btn btn-ghost">Explore Our Systems →</a>
       </div>
 
@@ -551,7 +562,7 @@
           <p class="cta-body">Book a free 30-minute strategy call. We’ll examine your current lead and customer workflow, identify where opportunities are being lost, and recommend what should be improved or built.</p>
         </div>
         <div class="cta-strip-actions sl-reveal" data-delay="1">
-          <a href="#contact" class="btn btn-primary btn-lg">Book a Free Strategy Call</a>
+          <a href="#contact" class="btn btn-primary btn-lg" data-analytics-event="strategy_call_click" data-analytics-location="final_cta">Book a Free Strategy Call</a>
           <p class="cta-note">No commitment. Clear recommendations. Built around your business.</p>
         </div>
       </div>
