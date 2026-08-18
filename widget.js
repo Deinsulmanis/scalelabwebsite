@@ -257,7 +257,7 @@
       font-family: inherit;
       padding: 9px 12px;
       resize: none;
-      min-height: 38px;
+      min-height: 48px;
       max-height: 100px;
       outline: none;
       transition: border-color 0.2s;
@@ -267,8 +267,8 @@
     #sla-input:focus { border-color: #00D4FF; }
 
     #sla-send {
-      width: 38px;
-      height: 38px;
+      width: 48px;
+      height: 48px;
       border-radius: 8px;
       background: #00D4FF;
       border: none;

@@ -150,7 +150,9 @@ form.addEventListener('submit', (e) => {
 // SMOOTH SCROLL — account for nav height
 document.querySelectorAll('a[href^="#"]').forEach(link => {
   link.addEventListener('click', (e) => {
-    const target = document.querySelector(link.getAttribute('href'));
+    const href = link.getAttribute('href');
+    if (!href || href === '#') return;
+    const target = document.querySelector(href);
     if (!target) return;
     e.preventDefault();
     const top = target.getBoundingClientRect().top + window.scrollY - 80;
@@ -158,32 +160,9 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
   });
 });
 
-// COUNTER ANIMATION
-function animateCounters() {
-  document.querySelectorAll('.stat-num, .result-num').forEach(el => {
-    const text = el.textContent.trim();
-    const num  = parseFloat(text.replace(/[^0-9.]/g, ''));
-    if (isNaN(num) || num === 0) return;
-    const prefix   = text.match(/^[^0-9]*/)?.[0]  || '';
-    const suffix   = text.match(/[^0-9.]+$/)?.[0] || '';
-    const duration = 1200;
-    const start    = performance.now();
-    const update = (now) => {
-      const t    = Math.min((now - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - t, 3);
-      el.textContent = prefix + (num < 10 ? (num * ease).toFixed(1) : Math.round(num * ease)) + suffix;
-      if (t < 1) requestAnimationFrame(update);
-    };
-    requestAnimationFrame(update);
-  });
-}
-const counterObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) { animateCounters(); counterObserver.disconnect(); }
-  });
-}, { threshold: 0.3 });
-const resultsGrid = document.querySelector('.results-grid');
-if (resultsGrid) counterObserver.observe(resultsGrid);
+// Keep the footer current without requiring annual content edits.
+const currentYear = document.getElementById('currentYear');
+if (currentYear) currentYear.textContent = new Date().getFullYear();
 
 // HERO CUBE PARALLAX
 const heroCube = document.getElementById('heroCube');
