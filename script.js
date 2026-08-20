@@ -77,14 +77,22 @@ updateNav();
 // MOBILE MENU TOGGLE
 const navToggle = document.getElementById('navToggle');
 const navLinks  = document.querySelector('.nav-links');
+function closeMobileMenu() {
+  navLinks.style.cssText = '';
+  navToggle.setAttribute('aria-expanded', 'false');
+}
 navToggle.addEventListener('click', () => {
   const open = navLinks.style.display === 'flex';
   navLinks.style.cssText = open
     ? ''
     : 'display:flex;flex-direction:column;position:fixed;top:80px;left:0;right:0;background:rgba(2,13,24,0.97);backdrop-filter:blur(16px);padding:24px;gap:24px;border-bottom:1px solid rgba(0,212,255,0.12);z-index:99;';
+  navToggle.setAttribute('aria-expanded', String(!open));
 });
 document.querySelectorAll('.nav-links a').forEach(link => {
-  link.addEventListener('click', () => { navLinks.style.cssText = ''; });
+  link.addEventListener('click', closeMobileMenu);
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 768) closeMobileMenu();
 });
 
 // SCROLL REVEAL — watches .sl-reveal and adds .is-visible
