@@ -13,10 +13,15 @@
   window.__scalelabWidget = true;
 
   // ── Conversation state ──────────────────────────────────────────────────────
-  const history = [];
+  const STORAGE_KEY = "scalelab-chat-v2";
+  const savedState = (() => {
+    try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
+  })();
+  const history = Array.isArray(savedState.history) ? savedState.history.slice(-30) : [];
+  const conversationId = savedState.conversationId || crypto.randomUUID();
   let   isOpen  = false;
   let   isLoading = false;
-  let   greeted = false;
+  let   greeted = history.length > 0;
 
   // ── Styles ──────────────────────────────────────────────────────────────────
   const css = `
@@ -291,6 +296,7 @@
       margin-top: 8px;
       letter-spacing: 0.02em;
     }
+    #sla-footer a { color: #5f91a8; text-underline-offset: 2px; }
 
     /* ── Animations ── */
     @keyframes sla-fade-in {
@@ -372,6 +378,10 @@
   // Chat window
   const win = document.createElement("div");
   win.id = "sla-window";
+  win.setAttribute("role", "dialog");
+  win.setAttribute("aria-label", "ScaleLab AI assistant");
+  win.setAttribute("aria-modal", "false");
+  win.setAttribute("aria-hidden", "true");
   win.innerHTML = `
     <div id="sla-header">
       <div id="sla-avatar">${HEX_LOGO}</div>
@@ -379,17 +389,17 @@
         <strong>ScaleLab AI</strong>
         <span>AI Automation Assistant</span>
       </div>
-      <div id="sla-status-dot"></div>
+      <div id="sla-status-dot" role="status" aria-label="Checking assistant availability"></div>
     </div>
-    <div id="sla-messages"></div>
+    <div id="sla-messages" role="log" aria-live="polite" aria-relevant="additions"></div>
     <div id="sla-input-area">
       <div id="sla-input-row">
-        <textarea id="sla-input" placeholder="Type a message..." rows="1"></textarea>
-        <button id="sla-send">
+        <textarea id="sla-input" aria-label="Message" placeholder="Type a message..." rows="1" maxlength="2000"></textarea>
+        <button id="sla-send" aria-label="Send message">
           <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
       </div>
-      <div id="sla-footer">Powered by ScaleLab AI</div>
+      <div id="sla-footer">AI assistant · <a href="/privacy-policy" target="_blank" rel="noopener">Privacy</a></div>
     </div>
   `;
 
@@ -398,7 +408,7 @@
   launcher.id = "sla-launcher";
   launcher.innerHTML = `
     <div id="sla-tooltip">👋 Let's automate your business!</div>
-    <button id="sla-bubble" aria-label="Open chat">
+    <button id="sla-bubble" aria-label="Open chat" aria-expanded="false" aria-controls="sla-window">
       ${HEX_LOGO_DARK}
       <svg class="sla-icon-close" viewBox="0 0 24 24">
         <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -418,6 +428,8 @@
   const badge      = document.getElementById("sla-badge");
   const tooltip    = document.getElementById("sla-tooltip");
 
+  history.forEach((message) => addMessage(message.role === "assistant" ? "bot" : "user", message.content));
+
   // ── Helpers ─────────────────────────────────────────────────────────────────
   function scrollBottom() {
     messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -426,12 +438,27 @@
   function addMessage(role, text) {
     const wrap = document.createElement("div");
     wrap.className = `sla-msg sla-${role}`;
-    wrap.innerHTML = `
-      <div class="sla-av">${role === "bot" ? "AI" : "You"}</div>
-      <div class="sla-bubble">${text.replace(/\n/g, "<br>")}</div>
-    `;
+    const avatar = document.createElement("div");
+    avatar.className = "sla-av";
+    avatar.textContent = role === "bot" ? "AI" : "You";
+    const message = document.createElement("div");
+    message.className = "sla-bubble";
+    message.textContent = text;
+    message.style.whiteSpace = "pre-wrap";
+    wrap.append(avatar, message);
     messagesEl.appendChild(wrap);
     scrollBottom();
+  }
+
+  function persistHistory() {
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ conversationId, history: history.slice(-30) })); } catch { /* Storage is optional. */ }
+  }
+
+  function setConnectionState(online) {
+    const dot = document.getElementById("sla-status-dot");
+    dot.style.background = online ? "#22c55e" : "#f59e0b";
+    dot.style.boxShadow = online ? "0 0 6px #22c55e" : "0 0 6px #f59e0b";
+    dot.setAttribute("aria-label", online ? "Assistant online" : "Assistant unavailable");
   }
 
   function showTyping() {
@@ -472,17 +499,20 @@
 
   // ── API call ────────────────────────────────────────────────────────────────
   async function fetchAI(messages) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
     const res = await fetch(API_URL, {
       method  : "POST",
       headers : { "Content-Type": "application/json" },
-      body    : JSON.stringify({ messages }),
-    });
+      body    : JSON.stringify({ conversationId, messages: messages.slice(-30) }),
+      signal  : controller.signal,
+    }).finally(() => clearTimeout(timeout));
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.error || `Server error ${res.status}`);
     }
     const data = await res.json();
-    return data.content || "";
+    return data;
   }
 
   // ── Send message ─────────────────────────────────────────────────────────────
@@ -492,6 +522,7 @@
 
     addMessage("user", text);
     history.push({ role: "user", content: text });
+    persistHistory();
 
     inputEl.value = "";
     autoResize();
@@ -499,14 +530,19 @@
     showTyping();
 
     try {
-      const reply = await fetchAI(history);
+      const data = await fetchAI(history);
+      const reply = data.content || "";
       removeTyping();
       history.push({ role: "assistant", content: reply });
+      persistHistory();
       addMessage("bot", reply);
+      setConnectionState(true);
+      if (data.leadCaptured) sessionStorage.removeItem(STORAGE_KEY);
       if (!isOpen) showBadge();
     } catch (err) {
       removeTyping();
-      addMessage("bot", "Sorry, something went wrong. Please try again.");
+      setConnectionState(false);
+      addMessage("bot", err.name === "AbortError" ? "The response took too long. Please try sending your message again." : "The assistant is temporarily unavailable. Please try again shortly.");
       console.error("[Beacon Widget]", err.message);
     } finally {
       setLoading(false);
@@ -518,7 +554,10 @@
   function openWidget() {
     isOpen = true;
     win.classList.add("sla-visible");
+    win.setAttribute("aria-hidden", "false");
     launcher.classList.add("sla-open");
+    bubble.setAttribute("aria-expanded", "true");
+    bubble.setAttribute("aria-label", "Close chat");
     tooltip.style.display = "none";
     hideBadge();
     inputEl.focus();
@@ -531,12 +570,16 @@
       fetchAI([{
         role: "user",
         content: "[System: The customer just opened the chat widget. Greet them warmly and ask your first qualifying question.]"
-      }]).then(reply => {
+      }]).then(data => {
+        const reply = data.content || "";
         removeTyping();
         history.push({ role: "assistant", content: reply });
+        persistHistory();
         addMessage("bot", reply);
+        setConnectionState(true);
       }).catch(() => {
         removeTyping();
+        setConnectionState(false);
         addMessage("bot", "Hi there! 👋 What type of service are you looking for today?");
       }).finally(() => setLoading(false));
     }
@@ -545,7 +588,10 @@
   function closeWidget() {
     isOpen = false;
     win.classList.remove("sla-visible");
+    win.setAttribute("aria-hidden", "true");
     launcher.classList.remove("sla-open");
+    bubble.setAttribute("aria-expanded", "false");
+    bubble.setAttribute("aria-label", "Open chat");
   }
 
   function toggleWidget() {
