@@ -1,0 +1,4 @@
+# staffing/ is compared byte for byte with a fresh build of staffing-src/, so
+# both keep LF line endings on every platform. Binary files are left alone.
+/staffing/** text=auto eol=lf
+/staffing-src/** text=auto eol=lf
