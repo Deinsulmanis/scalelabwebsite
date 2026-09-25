@@ -1,16 +1,25 @@
-import { trackOnce, trackWhenVisible } from '../analytics.js';
-
-const MILESTONES = [25, 50, 75];
+import { trackOnce } from '../analytics.js';
+import { whenVisibleFor } from '../attribution/visibility.js';
+import { createWatchTracker } from '../attribution/video-progress.js';
 
 /**
  * Click-to-play explainer. The markup ships a plain <video controls> so the
- * video plays without JavaScript; this adds the poster play button, progress
- * events, an end screen that leads to booking, and a readable failure state.
+ * video plays without JavaScript; this adds the poster play button, an end
+ * screen that leads to booking, a readable failure state, and measurement:
+ *
+ *   visible    half the player in view for one second        staffing_video_impression / video_visible
+ *   playing    frames actually playing (not just requested)  staffing_video_play / video_playing
+ *   25/50/75   that share of the video actually WATCHED;     staffing_video_25… / video_25…
+ *              seeking or dragging through it counts nothing
+ *   complete   95% watched, or ended after 90% watched       staffing_video_complete / video_complete
+ *
  * With preload="none", nothing but the poster downloads until someone presses play.
  */
 export class ExplainerVideo {
-  constructor(root) {
+  constructor(root, attribution = null) {
     this.root = root;
+    this.attribution = attribution;
+    this.progress = createWatchTracker();
     this.video = root.querySelector('video');
     this.playButton = root.querySelector('[data-video-play]');
     this.endScreen = root.querySelector('[data-video-end]');
@@ -31,37 +40,46 @@ export class ExplainerVideo {
       this.play();
     });
 
-    this.video.addEventListener('play', () => {
-      this.endScreen.hidden = true;
+    this.video.addEventListener('play', () => { this.endScreen.hidden = true; });
+    this.video.addEventListener('playing', () => {
       trackOnce('staffing_video_play');
+      this.attribution?.once('video_playing');
     });
-    this.video.addEventListener('timeupdate', () => this.recordProgress());
+    this.video.addEventListener('timeupdate', () => this.report(this.progress.tick({
+      currentTime: this.video.currentTime, duration: this.video.duration,
+      at: performance.now(), rate: this.video.playbackRate,
+    })));
+    for (const type of ['seeking', 'pause', 'waiting']) this.video.addEventListener(type, () => this.progress.interrupt());
     this.video.addEventListener('ended', () => {
       this.endScreen.hidden = false;
-      trackOnce('staffing_video_complete');
+      this.report(this.progress.ended({ duration: this.video.duration }));
     });
     // A missing or blocked file errors on <source>, not on the <video> itself.
     this.video.querySelectorAll('source').forEach((source) => source.addEventListener('error', () => this.fail()));
     this.video.addEventListener('error', () => this.fail());
 
-    trackWhenVisible(this.video, 'staffing_video_impression', 0.5);
+    whenVisibleFor(this.video, { share: 0.5, ms: 1000 }, () => {
+      trackOnce('staffing_video_impression');
+      this.attribution?.once('video_visible');
+    });
   }
 
   play() {
     this.playButton.hidden = true;
+    // Hide the end screen now, not only when the async 'play' event arrives.
+    this.endScreen.hidden = true;
     this.video.controls = true;
     this.video.focus({ preventScroll: true });
     // Playback can still be refused (e.g. data saver); the native controls remain.
     this.video.play()?.catch(() => {});
   }
 
-  recordProgress() {
-    const { currentTime, duration } = this.video;
-    if (!Number.isFinite(duration) || duration <= 0) return;
-    const percent = (currentTime / duration) * 100;
-    MILESTONES.forEach((milestone) => {
-      if (percent >= milestone) trackOnce(`staffing_video_${milestone}`);
-    });
+  report(milestones) {
+    for (const milestone of milestones) {
+      const name = milestone === 'complete' ? 'video_complete' : `video_${milestone}`;
+      trackOnce(`staffing_${name}`);
+      this.attribution?.once(name);
+    }
   }
 
   fail() {

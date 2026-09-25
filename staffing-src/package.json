@@ -9,7 +9,9 @@
     "build:site": "vite build --outDir ../staffing --emptyOutDir",
     "verify:site": "node tools/verify-site.mjs",
     "preview": "vite preview --host 127.0.0.1",
-    "check": "node tools/check.mjs"
+    "test:unit": "node --test \"tools/unit/*.test.mjs\"",
+    "check": "node tools/check.mjs",
+    "check:attribution": "node tools/attribution-check.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
