@@ -1,0 +1,19 @@
+{
+  "name": "scalelab-staffing-landing-page",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "build:site": "vite build --outDir ../staffing --emptyOutDir",
+    "verify:site": "node tools/verify-site.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "check": "node tools/check.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "playwright": "^1.55.0",
+    "vite": "^7.0.0"
+  }
+}

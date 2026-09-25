@@ -1,0 +1,7 @@
+# Netlify publishes the repository root. The staffing page's source is kept in
+# staffing-src/ for version control only, so it is never served on the site.
+[[redirects]]
+  from = "/staffing-src/*"
+  to = "/404"
+  status = 404
+  force = true
