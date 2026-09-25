@@ -2,6 +2,83 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Origin-only Referer on every request, same-origin included: the arrival URL
+         can carry a link token, and requests may start before any script runs. -->
+    <meta name="referrer" content="strict-origin" />
+    <script>
+      // FIRST executable code on the page. Before GA4 or any tracking request:
+      //  1. read a staffing link token (?t=, 22 URL-safe characters; format check only),
+      //     an internal-mark code (#sl-mark=) or a debug switch (#sl-debug=);
+      //  2. remove them from the address bar with history.replaceState, keeping every
+      //     other query parameter and fragment;
+      //  3. decide whether GA4 loads. It never loads while the URL could not be
+      //     cleaned, in an internal browser outside debug mode, or on a marking visit.
+      // The token is handed to the page's module script (src/attribution/) through a
+      // non-enumerable window property and is never logged or shown.
+      (function () {
+        var GA_ID = 'G-MGQJVCVWFZ';
+        var boot = {
+          production: /^(www\.)?scalelabai\.ca$/.test(location.hostname),
+          token: null, markCode: null, markOff: false, debugRequest: null,
+          internal: false, debug: false, urlClean: true, ga: false,
+        };
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function () { window.dataLayer.push(arguments); };
+        try {
+          var url = new URL(location.href);
+          var changed = false;
+          if (url.searchParams.has('t')) {
+            var raw = url.searchParams.get('t') || '';
+            if (/^[A-Za-z0-9_-]{22}$/.test(raw)) boot.token = raw;
+            url.searchParams.delete('t');
+            changed = true;
+          }
+          var mark = /^#sl-mark=([A-Za-z0-9._-]{1,200})$/.exec(url.hash);
+          var debugSwitch = /^#sl-debug=([01])$/.exec(url.hash);
+          if (mark) {
+            if (mark[1] === 'off') boot.markOff = true; else boot.markCode = mark[1];
+            url.hash = '';
+            changed = true;
+          } else if (debugSwitch) {
+            boot.debugRequest = debugSwitch[1];
+            url.hash = '';
+            changed = true;
+          }
+          if (changed) history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+        } catch (error) {
+          boot.urlClean = false;
+        }
+        if (/[?&]t=/.test(location.search) || /^#sl-/.test(location.hash)) boot.urlClean = false;
+
+        function area(name) { try { return window[name]; } catch (error) { return null; } }
+        function read(storage, key) { try { return storage ? storage.getItem(key) : null; } catch (error) { return null; } }
+        function write(storage, key, value) {
+          try { if (storage) { if (value === null) storage.removeItem(key); else storage.setItem(key, value); } } catch (error) { /* storage unavailable */ }
+        }
+        var local = area('localStorage');
+        var session = area('sessionStorage');
+        if (boot.markOff) { write(local, 'sl.internal', null); write(session, 'sl.debug', null); }
+        boot.internal = read(local, 'sl.internal') === '1';
+        // Debug mode exists only in a browser already marked internal.
+        if (boot.internal && boot.debugRequest) write(session, 'sl.debug', boot.debugRequest === '1' ? '1' : null);
+        boot.debug = boot.internal && read(session, 'sl.debug') === '1';
+
+        // GA4 (same property as scalelabai.ca), production host only. Internal browsers
+        // load it only in debug mode, flagged for DebugView and the internal-traffic filter.
+        if (boot.production && boot.urlClean && !boot.markCode && (!boot.internal || boot.debug)) {
+          var tag = document.createElement('script');
+          tag.async = true;
+          tag.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+          document.head.appendChild(tag);
+          window.gtag('js', new Date());
+          var config = { content_group: 'staffing', page_location: location.href };
+          if (boot.debug) { config.debug_mode = true; config.traffic_type = 'internal'; }
+          window.gtag('config', GA_ID, config);
+          boot.ga = true;
+        }
+        Object.defineProperty(window, '__slLandingBoot', { value: boot, configurable: true, enumerable: false, writable: false });
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Employer Acquisition for Industrial Staffing Agencies | ScaleLab AI</title>
     <meta name="description" content="You already know how to find workers. We find the employers that need them and put qualified employer meetings on your calendar, paid based on the meetings we generate." />
@@ -25,21 +102,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300..800&display=swap" rel="stylesheet" />
-    <script>
-      // GA4, same property as scalelabai.ca. The tag loads only on the production
-      // host, so local development, QA runs and deploy previews never send data;
-      // gtag() calls elsewhere still queue into dataLayer for testing.
-      window.dataLayer = window.dataLayer || [];
-      function gtag() { window.dataLayer.push(arguments); }
-      if (/^(www\.)?scalelabai\.ca$/.test(location.hostname)) {
-        var gaTag = document.createElement('script');
-        gaTag.async = true;
-        gaTag.src = 'https://www.googletagmanager.com/gtag/js?id=G-MGQJVCVWFZ';
-        document.head.appendChild(gaTag);
-        gtag('js', new Date());
-        gtag('config', 'G-MGQJVCVWFZ', { content_group: 'staffing' });
-      }
-    </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -56,7 +118,7 @@
         ]
       }
     </script>
-    <script type="module" crossorigin src="/staffing/assets/index-A6evF3uZ.js"></script>
+    <script type="module" crossorigin src="/staffing/assets/index-C_f3TXoi.js"></script>
     <link rel="stylesheet" crossorigin href="/staffing/assets/index-D_-wAJ4h.css">
   </head>
   <body>

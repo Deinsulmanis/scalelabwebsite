@@ -159,20 +159,19 @@ try {
     await page.waitForFunction(() => location.hash === '#staffing-demo');
 
     // Video: play, milestones, completion, end screen and its booking CTA, replay without duplicate events.
+    // Milestones count WATCHED time (seeking earns nothing), so the check plays at 16x.
     const video = page.locator('[data-explainer] video');
     await page.locator('[data-video-play]').click();
     await page.waitForFunction(() => document.querySelector('[data-explainer] video').currentTime > 0.2, null, { timeout: 20000 });
     await page.screenshot({ path: shot(`${width}-video.png`) });
-    const duration = await video.evaluate((element) => element.duration);
-    for (const milestone of [25, 50, 75]) {
-      await video.evaluate((element, time) => { element.currentTime = time; }, (duration * (milestone + 3)) / 100);
-      await waitForEvent(page, `staffing_video_${milestone}`);
-    }
-    await video.evaluate((element) => { element.currentTime = element.duration - 0.4; });
+    await video.evaluate((element) => { element.playbackRate = 16; });
+    for (const milestone of [25, 50, 75]) await waitForEvent(page, `staffing_video_${milestone}`);
     await waitForEvent(page, 'staffing_video_complete');
+    await page.waitForFunction(() => document.querySelector('[data-explainer] video').ended, null, { timeout: 20000 });
     assert.equal(await page.locator('[data-video-end]').isVisible(), true, 'Video end screen shows');
     await page.locator('.video-shell').screenshot({ path: shot(`${width}-video-end.png`) });
     await openBooking('[data-video-end] [data-booking]', 'escape');
+    await video.evaluate((element) => { element.playbackRate = 1; });
     await page.locator('[data-video-replay]').click();
     await page.waitForFunction(() => { const element = document.querySelector('[data-explainer] video'); return !element.paused && element.currentTime < 5; });
     assert.equal(await page.locator('[data-video-end]').isVisible(), false, 'End screen hides on replay');
@@ -212,6 +211,9 @@ try {
     assert.doesNotMatch(await page.locator('meta[name="robots"]').getAttribute('content'), /noindex/);
     assert.equal(await page.locator('h1').isVisible(), true);
     assert.equal(tally(await dataLayerEvents(page)).staffing_page_view, 1);
+    // A tracked outreach link: the token leaves the address bar before anything else runs.
+    await page.goto(`${baseURL}?utm_source=email&t=AbCdEfGhIjKlMnOpQrStUv#staffing-demo`, { waitUntil: 'networkidle' });
+    assert.equal(page.url(), `${baseURL}?utm_source=email#staffing-demo`, 'Link token removed, other parameters kept');
     await page.goto(`${baseURL}#staffing-demo`, { waitUntil: 'networkidle' });
     assert.equal(await page.locator('#staffing-demo').evaluate((element) => { const rect = element.getBoundingClientRect(); return rect.top < innerHeight && rect.bottom > 0; }), true, 'Deep link lands on the walkthrough');
     await context.close();
@@ -314,7 +316,7 @@ try {
     const config = await page.evaluate(() => window.dataLayer.filter((entry) => entry[0] === 'config').map((entry) => [entry[1], entry[2]]));
     report.productionTag = { requested: tagRequests.find((url) => url.includes('gtag/js')), config };
     assert.ok(report.productionTag.requested?.includes(`id=${GA_ID}`), 'GA4 tag loads on scalelabai.ca');
-    assert.deepEqual(config, [[GA_ID, { content_group: 'staffing' }]]);
+    assert.deepEqual(config, [[GA_ID, { content_group: 'staffing', page_location: DESTINATION }]]);
     await context.close();
   }
 

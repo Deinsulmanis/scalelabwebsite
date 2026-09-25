@@ -5,3 +5,16 @@
   to = "/404"
   status = 404
   force = true
+
+# Staffing page: first-party measurement for tracked outreach links. The page
+# posts to this same-origin path; Netlify forwards it to the SalesPipeline2
+# collector and signs every forwarded request (x-nf-sign, HS256) with the value
+# of the LANDING_PROXY_SIGNING_SECRET environment variable. That value is set in
+# Netlify (production context) and on Railway, never in this repository. The
+# collector drops anything unsigned or signed for another site or deploy context.
+[[redirects]]
+  from = "/staffing/api/lp"
+  to = "https://receptionist.scalelabai.ca/api/landing/e"
+  status = 200
+  force = true
+  signed = "LANDING_PROXY_SIGNING_SECRET"

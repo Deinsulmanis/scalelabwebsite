@@ -39,26 +39,52 @@ npm run check                                  # Playwright + axe against the lo
 
 `tools/check.mjs` covers copy rules, layout at 1440, 1024, 768, 390 and 360px (overflow, 44px tap targets, heading order, WCAG 2.1 A/AA automated checks), the main journeys (booking dialog, video playback and end screen, FAQ, calls to action), analytics event counts, no-JavaScript behaviour, the video failure state and a throttled mobile load. Results and screenshots go to `docs/qa/`, which isn't committed.
 
+```sh
+npm run test:unit            # session, collector batching and video-progress rules
+npm run build
+npm run check:attribution    # link-token handling, sessions, first-party events, internal/debug modes
+```
+
+`tools/attribution-check.mjs` serves the build as `https://scalelabai.ca/staffing/` with the GA tag stubbed and the collector replaced by a recorder, so the production-only paths run without sending anything.
+
 `tools/live-check.mjs` runs read-only checks against the live page after a deploy. It switches off GA measurement, blocks analytics collection requests and never books a slot.
 
 ## Analytics
 
-The page uses GA4 with the content group `staffing`. The tag loads only on `scalelabai.ca` and `www.scalelabai.ca`, so local development, previews and QA runs send nothing. Every event carries `funnel: staffing`, and no event carries personal data.
+### GA4 (aggregate)
+
+The page uses GA4 with the content group `staffing`. The tag loads only on `scalelabai.ca` and `www.scalelabai.ca`, so local development, previews and QA runs send nothing. Every event carries `funnel: staffing`. No event carries personal data or a link identifier, and `page_location` is always the cleaned URL.
 
 | Event | When |
 |---|---|
 | `staffing_page_view` | Once per page load |
 | `staffing_hero_cta_click` | Once per hero call to action per load (`cta`: `see_how_it_works`, `book_call`) |
-| `staffing_video_impression` | Half the video in view, once |
-| `staffing_video_play` | First play, once |
-| `staffing_video_25` / `_50` / `_75` | Playback progress reached, once each |
-| `staffing_video_complete` | Video ended, once |
+| `staffing_video_impression` | Half the video in view for one second, once |
+| `staffing_video_play` | Video frames actually playing (not just requested), once |
+| `staffing_video_25` / `_50` / `_75` | That share of the video actually watched, once each. Seeking or dragging through it counts nothing. |
+| `staffing_video_complete` | 95% watched, or ended after 90% watched, once |
 | `staffing_video_error` | Video failed to load, once |
-| `staffing_qualified_meeting_section_view` | Half the qualification card in view, once |
+| `staffing_qualified_meeting_section_view` | Half the qualification card in view for one second, once |
 | `staffing_final_cta_click` | Once per load |
-| `staffing_booking_started` | First booking call to action opened per load (`cta_location`, `method`) |
+| `staffing_booking_started` | First booking call to action per load (`cta_location`, `method`). Historical name: this is a click, not a booking. |
 | `staffing_booking_open_new_tab` | Fallback link in the booking dialog |
 | `staffing_booking_embed_slow` | Booking embed not loaded after 8 seconds |
+
+### Outreach links (first party)
+
+ScaleLab's outreach emails can link to `/staffing/?t=<token>`, where the token is opaque and random. The first script on the page removes it from the address bar before GA4 starts. It keeps it only in that tab's `sessionStorage`, and the page never shows or logs it.
+
+Only a tab that arrived with a token sends measurement events, same-origin to `/staffing/api/lp` (best-effort, batched, no retries). A browser marked internal by ScaleLab also sends them. Visitors without a token send nothing there.
+
+The events are:
+- `page_load`, `visible`, `engaged_10s`;
+- `interaction` (trusted pointer, touch, key or wheel input), `scroll_input`, `scroll_depth`;
+- `video_visible`, `video_playing`, `video_25` / `_50` / `_75`, `video_complete`;
+- `meeting_section_visible`;
+- `booking_cta_click`, `booking_dialog_open`, `booking_embed_loaded`, `booking_new_tab`;
+- `page_summary`.
+
+A scripted or instant scroll is never counted as input.
 
 Google's appointment-schedule embed doesn't tell the page when a booking is confirmed, so completed bookings aren't measured in the browser.
 
@@ -68,11 +94,12 @@ Every booking call to action is a plain link to the Google Calendar appointment 
 
 ## Files
 
-- `index.html`: copy, metadata, FAQ structured data, GA4 bootstrap and the booking dialog.
+- `index.html`: copy, metadata, FAQ structured data, the booking dialog, and the first `<head>` script: link-token removal, internal/debug switches and the GA4 bootstrap.
 - `src/styles.css`: design tokens (see `docs/DESIGN-SYSTEM.md`), components and responsive rules.
-- `src/main.js`: wires analytics, booking, the video and scroll reveals.
-- `src/analytics.js`: `track`, `trackOnce`, `trackWhenVisible`.
-- `src/components/booking.js`: booking links and the scheduling dialog.
-- `src/components/explainer-video.js`: click-to-play explainer, progress events, end screen and failure state.
+- `src/main.js`: wires analytics, attribution, booking, the video and scroll reveals.
+- `src/analytics.js`: `track`, `trackOnce` (GA4).
+- `src/attribution/`: first-party sessions, event collection, dwell-based visibility, watched-time video progress and the debug panel.
+- `src/components/booking.js`: booking links, the scheduling dialog and booking events.
+- `src/components/explainer-video.js`: click-to-play explainer, playback events, end screen and failure state.
 - `public/media/`: the 70-second explainer video and its poster frame. To change the video, publish it under a new filename and update the `<source>` in `index.html`.
 - `docs/`: design reference and SEO notes.
