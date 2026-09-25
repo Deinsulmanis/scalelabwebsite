@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<title>Forwarding probe</title>
+</head>
+<body>
+<pre id="out">running</pre>
+<script>
+  // Throwaway probe: same-origin POSTs through Netlify's forwarding rules.
+  // Synthetic payload only.
+  (async () => {
+    const out = {};
+    const paths = ['/staffing/api/lp-probe?probe=1&x=synthetic', '/staffing/api/lp-probe-headers?probe=2'];
+    for (const path of paths) {
+      try {
+        const response = await fetch(path, {
+          method: 'POST', keepalive: true,
+          headers: { 'content-type': 'text/plain;charset=UTF-8' },
+          body: JSON.stringify({ synthetic: true, note: 'netlify forwarding probe', path }),
+        });
+        out[path] = { status: response.status, body: await response.text() };
+      } catch (error) {
+        out[path] = { error: String(error) };
+      }
+    }
+    document.getElementById('out').textContent = JSON.stringify(out);
+  })();
+</script>
+</body>
+</html>
