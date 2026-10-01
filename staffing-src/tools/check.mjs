@@ -12,7 +12,7 @@ const distDir = fileURLToPath(new URL('../dist/', import.meta.url));
 const output = new URL('../docs/qa/', import.meta.url);
 const shot = (name) => fileURLToPath(new URL(name, output));
 
-const BOOKING_LINK = 'https://calendar.app.google/h3X8e3WbBKjPrBoVA';
+const BOOKING_LINK = 'https://calendar.app.google/PmFDr6adbhfcExeWA';
 const SCHEDULE_ID = 'AcZssZ2qt7Yk5pjd4beD8UsAZc1Nl4TwkSqc3cMoH4HbjxGi8MoDRUPfAH32a7y6Oa2SuypSIKBZiWNA';
 const BOOKING_EMBED = `https://calendar.google.com/calendar/appointments/schedules/${SCHEDULE_ID}?gv=true`;
 const BOOKING_CTAS = ['final', 'hero', 'nav', 'video', 'video_end'];

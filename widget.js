@@ -387,7 +387,7 @@
       <div id="sla-avatar">${HEX_LOGO}</div>
       <div id="sla-header-text">
         <strong>ScaleLab AI</strong>
-        <span>AI Automation Assistant</span>
+        <span>Website assistant</span>
       </div>
       <div id="sla-status-dot" role="status" aria-label="Checking assistant availability"></div>
     </div>
@@ -407,7 +407,7 @@
   const launcher = document.createElement("div");
   launcher.id = "sla-launcher";
   launcher.innerHTML = `
-    <div id="sla-tooltip">👋 Let's automate your business!</div>
+    <div id="sla-tooltip">Questions? Ask ScaleLab.</div>
     <button id="sla-bubble" aria-label="Open chat" aria-expanded="false" aria-controls="sla-window">
       ${HEX_LOGO_DARK}
       <svg class="sla-icon-close" viewBox="0 0 24 24">
